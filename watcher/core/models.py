@@ -40,6 +40,7 @@ class PullRequest(models.Model):
     pr_number = models.IntegerField()
     status = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField()
+    updated_on = models.DateTimeField(blank=True,null=True)
     closed_on = models.DateTimeField(blank=True,null=True)
 
     def __str__(self):
