@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = Path(__file__).parent.resolve()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()
@@ -39,49 +39,49 @@ class Command(BaseCommand):
                     
                     repo = Repository.objects.get(name=repository_name)
                     all_issues = repository.get_issues(state="all")
-                    # itr = 0
-                    # for issue in all_issues:
-                    #     itr+=1
-                    #     if len(issue.assignees) > 0:
-                    #         for single_assignee in issue.assignees:
-                    #             print(f"single assignee after handling1: {single_assignee.login}")
-                    #             assignee = User.objects.get(username=single_assignee.login)
-                    #             if Issue.objects.filter(title=issue.title).exists():
-                    #                 continue
+                    itr = 0
+                    for issue in all_issues:
+                        itr+=1
+                        if len(issue.assignees) > 0:
+                            for single_assignee in issue.assignees:
+                                print(f"single assignee after handling1: {single_assignee.login}")
+                                assignee = User.objects.get(username=single_assignee.login)
+                                if Issue.objects.filter(title=issue.title).exists():
+                                    continue
                                 
-                    #             print(f"title: {issue.title}")
-                    #             issue = Issue(
-                    #                 assignee = assignee,
-                    #                 title = issue.title,
-                    #                 issue_number = issue.number,
-                    #                 status = issue.state,
-                    #                 repo = repo,
-                    #                 created_at = issue.created_at,
-                    #                 updated_on = issue.updated_at,
-                    #                 closed_on = issue.closed_at
-                    #             )
-                    #             issue.save()
+                                print(f"title: {issue.title}")
+                                issue = Issue(
+                                    assignee = assignee,
+                                    title = issue.title,
+                                    issue_number = issue.number,
+                                    status = issue.state,
+                                    repo = repo,
+                                    created_at = issue.created_at,
+                                    updated_on = issue.updated_at,
+                                    closed_on = issue.closed_at
+                                )
+                                issue.save()
 
                                 
-                    #     elif len(issue.assignees) == 0:
-                    #         assignee = User.objects.get(username="nobody")
-                    #         if Issue.objects.filter(title=issue.title).exists():
-                    #             continue
+                        elif len(issue.assignees) == 0:
+                            assignee = User.objects.get(username="nobody")
+                            if Issue.objects.filter(title=issue.title).exists():
+                                continue
 
-                    #         print(f"title: {issue.title}")
-                    #         issue = Issue(
-                    #             assignee = assignee,
-                    #             title = issue.title,
-                    #             issue_number = issue.number,
-                    #             status = issue.state,
-                    #             repo = repo,
-                    #             created_at = issue.created_at,
-                    #             updated_on = issue.updated_at,
-                    #             closed_on = issue.closed_at
-                    #         )
-                    #         issue.save()
-                    #     print(f"itr number outside loop: {itr}")
-                    # print(f"Ingested issues")
+                            print(f"title: {issue.title}")
+                            issue = Issue(
+                                assignee = assignee,
+                                title = issue.title,
+                                issue_number = issue.number,
+                                status = issue.state,
+                                repo = repo,
+                                created_at = issue.created_at,
+                                updated_on = issue.updated_at,
+                                closed_on = issue.closed_at
+                            )
+                            issue.save()
+                        print(f"itr number outside loop: {itr}")
+                    print(f"Ingested issues")
                     
                     print(f"Ingesting pull request info from repo {repository.name}")
                     

@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = Path(__file__).parent.resolve()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()
@@ -42,6 +42,7 @@ class Command(BaseCommand):
                                     print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
                                     try:
                                         if prev_updated_on != issue.updated_at:
+                                            print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
                                             Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
                                     except:
                                         continue
@@ -72,7 +73,8 @@ class Command(BaseCommand):
                                 prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
                                 print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
                                 if prev_updated_on != issue.updated_at:
-                                        Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
+                                    print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                    Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
                                 if prev_status != issue.state:
                                     Issue.objects.filter(title=issue.title).update(status=issue.state)
                                 if prev_closed_on != issue.closed_at:
@@ -106,9 +108,9 @@ class Command(BaseCommand):
                                     prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=pr.title)]
                                     prev_status = [i.status for i in Issue.objects.filter(title=pr.title)]
                                     prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=pr.title)]
-                                    print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
                                     if prev_updated_on != pr.updated_at:
-                                            Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                        print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                        Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
                                     if prev_status != pr.state:
                                         Issue.objects.filter(title=pr.title).update(status=pr.state)
                                     if prev_closed_on != pr.closed_at:
@@ -132,9 +134,9 @@ class Command(BaseCommand):
                                 prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=pr.title)]
                                 prev_status = [i.status for i in Issue.objects.filter(title=pr.title)]
                                 prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=pr.title)]
-                                print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
                                 if prev_updated_on != pr.updated_at:
-                                        Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                    print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                    Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
                                 if prev_status != pr.state:
                                     Issue.objects.filter(title=pr.title).update(status=pr.state)
                                 if prev_closed_on != pr.closed_at:
