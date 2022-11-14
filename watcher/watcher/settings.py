@@ -38,6 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "core",
+    'django_crontab',
+]
+
+CRONJOBS = [
+    ('0 12,18 * * *', 'django.core.management.command', ['ingestion']),
 ]
 
 MIDDLEWARE = [
