@@ -42,7 +42,7 @@ INSTALLED_APPS = [
 ]
 
 CRONJOBS = [
-    ('0 12,18 * * *', 'django.core.management.command', ['ingestion']),
+    ('*/30 * * * *', 'django.core.management.command', ['ingestion']),
 ]
 
 MIDDLEWARE = [

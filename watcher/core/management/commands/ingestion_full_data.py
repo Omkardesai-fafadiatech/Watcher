@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = Path(__file__).parent.resolve()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()

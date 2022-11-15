@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = Path(__file__).parent.resolve()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()
@@ -26,79 +26,8 @@ class Command(BaseCommand):
                     repository_name = repository.name
                     
                     repo = Repository.objects.get(name=repository_name)
-                    all_issues = repository.get_issues(state="all")
-                    itr = 0
-                    for issue in all_issues:
-                        itr+=1
-
-                        if len(issue.assignees) > 0:
-                            for single_assignee in issue.assignees:
-                                print(f"single assignee after handling1: {single_assignee.login}")
-                                assignee = User.objects.get(username=single_assignee.login)
-                                if Issue.objects.filter(title=issue.title).exists():
-                                    prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
-                                    prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
-                                    prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
-                                    print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
-                                    try:
-                                        if prev_updated_on != issue.updated_at:
-                                            print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
-                                            Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
-                                    except:
-                                        continue
-                                    if prev_status != issue.state:
-                                        Issue.objects.filter(title=issue.title).update(status=issue.state)
-                                    if prev_closed_on != issue.closed_at:
-                                        Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
-
-                                elif not Issue.objects.filter(title=issue.title).exists():
-                                    issue = Issue(
-                                        assignee = assignee,
-                                        title = issue.title,
-                                        issue_number = issue.number,
-                                        status = issue.state,
-                                        repo = repo,
-                                        created_at = issue.created_at,
-                                        updated_on = issue.updated_at,
-                                        closed_on = issue.closed_at
-                                    )
-                                    issue.save()
-                                
-                        elif len(issue.assignees) == 0:
-                            assignee = User.objects.get(username="nobody")
-                            print(f"no_assignee after handling: {assignee}")
-                            if Issue.objects.filter(title=issue.title).exists():
-                                prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
-                                prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
-                                prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
-                                print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
-                                if prev_updated_on != issue.updated_at:
-                                    print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
-                                    Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
-                                if prev_status != issue.state:
-                                    Issue.objects.filter(title=issue.title).update(status=issue.state)
-                                if prev_closed_on != issue.closed_at:
-                                    Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
-
-                            elif not Issue.objects.filter(title=issue.title).exists():
-                                issue = Issue(
-                                    assignee = assignee,
-                                    title = issue.title,
-                                    issue_number = issue.number,
-                                    status = issue.state,
-                                    repo = repo,
-                                    created_at = issue.created_at,
-                                    updated_on = issue.updated_at,
-                                    closed_on = issue.closed_at
-                                )
-                                issue.save()
-
-                        print(f"itr number outside loop: {itr}")
-
-
-                    pulls = repository.get_pulls(state="all")
                     itr1 =  0
-                    for pr in pulls:
+                    for pr in repository.get_pulls(state="all"):
                         itr1+=1
                         if len(pr.assignees) > 0:
                             for single_assignee in pr.assignees:
@@ -109,8 +38,11 @@ class Command(BaseCommand):
                                     prev_status = [i.status for i in Issue.objects.filter(title=pr.title)]
                                     prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=pr.title)]
                                     if prev_updated_on != pr.updated_at:
-                                        print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
-                                        Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                        try:
+                                            print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                            Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                        except:
+                                            continue
                                     if prev_status != pr.state:
                                         Issue.objects.filter(title=pr.title).update(status=pr.state)
                                     if prev_closed_on != pr.closed_at:
@@ -135,8 +67,11 @@ class Command(BaseCommand):
                                 prev_status = [i.status for i in Issue.objects.filter(title=pr.title)]
                                 prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=pr.title)]
                                 if prev_updated_on != pr.updated_at:
-                                    print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
-                                    Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                    try:
+                                        print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                        Issue.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                    except:
+                                        continue
                                 if prev_status != pr.state:
                                     Issue.objects.filter(title=pr.title).update(status=pr.state)
                                 if prev_closed_on != pr.closed_at:
@@ -156,6 +91,79 @@ class Command(BaseCommand):
                         print(f"itr1 number outside loop: {itr1}")
                     print(f"Ingested pull request")
 
+                    itr = 0
+                    for issue in repository.get_issues(state="all"):
+                        itr+=1
+                        # issue_title = [pr.title for pr in repository.get_pulls(state="all") if pr.title != issue.title]
+                        # print(pr_title, issue.title)
+                        if not PullRequest.objects.filter(title=issue.title).exists():
+                            if len(issue.assignees) > 0:
+                                for single_assignee in issue.assignees:
+                                    print(f"single assignee after handling1: {single_assignee.login}")
+                                    assignee = User.objects.get(username=single_assignee.login)
+                                    if Issue.objects.filter(title=issue.title).exists():
+                                        prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
+                                        prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
+                                        prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
+                                        print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
+                                        try:
+                                            if prev_updated_on != issue.updated_at:
+                                                print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                                Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
+                                        except:
+                                            continue
+                                        if prev_status != issue.state:
+                                            Issue.objects.filter(title=issue.title).update(status=issue.state)
+                                        if prev_closed_on != issue.closed_at:
+                                            Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
+
+                                    elif not Issue.objects.filter(title=issue.title).exists():
+                                        issue = Issue(
+                                            assignee = assignee,
+                                            title = issue.title,
+                                            issue_number = issue.number,
+                                            status = issue.state,
+                                            repo = repo,
+                                            created_at = issue.created_at,
+                                            updated_on = issue.updated_at,
+                                            closed_on = issue.closed_at
+                                        )
+                                        issue.save()
+                                    
+                            elif len(issue.assignees) == 0:
+                                assignee = User.objects.get(username="nobody")
+                                print(f"no_assignee after handling: {assignee}")
+                                if Issue.objects.filter(title=issue.title).exists():
+                                    prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
+                                    prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
+                                    prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
+                                    print(f"prev_updated_on: {prev_updated_on} , prev_status: {prev_status}")
+                                    if prev_updated_on != issue.updated_at:
+                                        print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
+                                        Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
+                                    if prev_status != issue.state:
+                                        Issue.objects.filter(title=issue.title).update(status=issue.state)
+                                    if prev_closed_on != issue.closed_at:
+                                        Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
+
+                                elif not Issue.objects.filter(title=issue.title).exists():
+                                    issue = Issue(
+                                        assignee = assignee,
+                                        title = issue.title,
+                                        issue_number = issue.number,
+                                        status = issue.state,
+                                        repo = repo,
+                                        created_at = issue.created_at,
+                                        updated_on = issue.updated_at,
+                                        closed_on = issue.closed_at
+                                    )
+                                    issue.save()
+                        else:
+                            continue
+                        print(f"itr number outside loop: {itr}")
+
+
+                    
 
                     
                     
