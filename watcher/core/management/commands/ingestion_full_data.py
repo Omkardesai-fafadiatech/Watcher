@@ -24,13 +24,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = Path(__file__).parent.resolve()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
-        user = login.get_user()
-        my_repos = user.get_repos()
-
-        for repository in my_repos:
+        for repository in login.get_user().get_repos():
             private = repository.private
 
             if private:

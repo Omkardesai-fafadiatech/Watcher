@@ -38,11 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "core",
-    'django_crontab',
-]
-
-CRONJOBS = [
-    ('*/30 * * * *', 'django.core.management.command', ['ingestion']),
+    "django_crontab",
 ]
 
 MIDDLEWARE = [
@@ -115,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -131,3 +127,7 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CRONJOBS = [
+    ('*/5 * * * *', 'django.core.management.call_command', ['ingestion']),
+]
