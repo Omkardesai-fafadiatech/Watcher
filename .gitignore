@@ -131,3 +131,6 @@ dmypy.json
 # ignoring subdirectories
 __pycache__/
 migrations/
+
+# ignoring files
+access_token_gen.py

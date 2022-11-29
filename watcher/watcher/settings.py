@@ -128,6 +128,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CRONJOBS = [
-    ('*/5 * * * *', 'django.core.management.call_command', ['ingestion']),
-]
+# CRONJOBS = [
+#     ('0 * * * *', 'django.core.management.call_command', ['ingestion']),
+# ]
