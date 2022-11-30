@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def update_pr(self, pr_info, repo, reviewer):
         # TODO: for love of GOD please cleanup DB and change me to
         # pr = PullRequest.objects.get(pr_number=pr_info.number)
-        pr = PullRequest.objects.filter(pr_number=pr_info.number, repo=repo).first()
+        pr = PullRequest.objects.get(pr_number=pr_info.number, repo=repo)
         if pr.updated_on != pr_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
             timezone("Asia/Kolkata")
         ):
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             print(f"Updated pr_number: {pr_info.number} for repo: {repo}")
 
     def update_issue(self, issue_info, repo, reviewer):
-        issue = Issue.objects.filter(issue_number=issue_info.number, repo=repo).first()
+        issue = Issue.objects.get(issue_number=issue_info.number, repo=repo)
         update_date = issue_info.updated_at
         if issue_info.updated_at != None:
             update_date = issue_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
@@ -64,6 +64,7 @@ class Command(BaseCommand):
                 all_pr_number = []
                 repo = Repository.objects.get(name=current_repo.name)
                 for current_pr in current_repo.get_pulls(state="all"):
+                    print(f"pr number: {current_pr.number}")
                     if current_pr.number not in all_pr_number:
                         all_pr_number.append(current_pr.number)
                     reviewer = User.objects.get(username="nobody")
@@ -97,16 +98,15 @@ class Command(BaseCommand):
                         pr.save()
                         print(f"Created PR {pr.pr_number} for repo {pr.repo}")
 
-                print(f"type of number: {type(all_pr_number[0])}")
                 for current_issue in current_repo.get_issues(state="all"):
                     reviewer = User.objects.get(username="nobody")
                     if len(current_issue.assignees) > 0:
                         reviewer = User.objects.get(
                             username=current_issue.assignees[0].login
                         )
-                    # if PullRequest.objects.filter(pr_number=current_issue.number, repo=repo).exists:
+                    # check if "PullRequest.objects.filter(pr_number=current_issue.number, repo=repo).exists:" can be used.
                     if current_issue.number not in all_pr_number:
-                        print(f"issue: {current_issue.number}")
+                        print(f"issue number: {current_issue.number}")
                         if Issue.objects.filter(
                             issue_number=current_issue.number, repo=repo
                         ).exists():
