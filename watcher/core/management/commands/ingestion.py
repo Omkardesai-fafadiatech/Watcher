@@ -3,52 +3,77 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from core.models import Repository, Issue, PullRequest
 from django.contrib.auth.models import User
-
-from core.utils import (
-    title_spliter,
-    get_pr_model_unique_title,
-    get_issue_model_unique_title,
-)
+import pytz
+from pytz import timezone
 
 
 class Command(BaseCommand):
     help = "Ingest git data into database"
-    WHITE_LISTED_REPO = [
-        "xpertconnect",
-        "xc_analytics",
-        "rsa_crawling",
-        "rsa_graphdb",
-    ]
+    WHITE_LISTED_REPO = ["xpertconnect", "xc_analytics", "rsa_crawling", "rsa_graphdb"]
 
     def update_pr(self, pr_info, repo, reviewer):
         # TODO: for love of GOD please cleanup DB and change me to
         # pr = PullRequest.objects.get(pr_number=pr_info.number)
-        pr = PullRequest.objects.filter(pr_number=pr_info.number).first()
-        if pr.updated_on != pr_info.updated_at:
+        pr = PullRequest.objects.filter(pr_number=pr_info.number, repo=repo).first()
+        if pr.updated_on != pr_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+            timezone("Asia/Kolkata")
+        ):
             pr.reviewer = reviewer
             pr.title = pr_info.title
             pr.status = pr_info.state
-            pr.updated_on = pr_info.updated_at
-            pr.closed_on = pr_info.closed_at
+            pr.updated_on = pr_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+                timezone("Asia/Kolkata")
+            )
+            if pr_info.closed_at == None:
+                pr.closed_on = pr_info.closed_at
+            else:
+                pr.closed_on = pr_info.closed_at.replace(tzinfo=pytz.utc).astimezone(
+                    timezone("Asia/Kolkata")
+                )
             pr.save()
-            print(f"Updated {pr_info.number} for {repo}")
+            print(f"Updated pr_number: {pr_info.number} for repo: {repo}")
 
-    def update_issue(self, issue_info):
-        pass
+    def update_issue(self, issue_info, repo, reviewer):
+        issue = Issue.objects.filter(issue_number=issue_info.number, repo=repo).first()
+        update_date = issue_info.updated_at
+        if issue_info.updated_at != None:
+            update_date = issue_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+                timezone("Asia/Kolkata")
+            )
+        if issue.updated_on != update_date:
+            issue.assignee = reviewer
+            issue.title = issue_info.title
+            issue.status = issue_info.state
+            issue.updated_on = issue_info.updated_at.replace(
+                tzinfo=pytz.utc
+            ).astimezone(timezone("Asia/Kolkata"))
+            if issue.closed_on == None:
+                issue.closed_on = issue_info.closed_at
+            else:
+                issue.closed_on = issue_info.closed_at.replace(
+                    tzinfo=pytz.utc
+                ).astimezone(timezone("Asia/Kolkata"))
+            issue.save()
+            print(f"Updated issue_number: {issue_info.number} for repo: {repo}")
 
     def handle(self, *args, **options):
         client = Github(settings.GITHUB_ACCESS_TOKEN)
         for current_repo in client.get_user().get_repos():
             if current_repo.name in self.WHITE_LISTED_REPO:
                 print(current_repo)
+                all_pr_number = []
+                repo = Repository.objects.get(name=current_repo.name)
                 for current_pr in current_repo.get_pulls(state="all"):
-                    repo = Repository.objects.get(name=current_repo.name)
+                    if current_pr.number not in all_pr_number:
+                        all_pr_number.append(current_pr.number)
                     reviewer = User.objects.get(username="nobody")
                     if len(current_pr.assignees) > 0:
                         reviewer = User.objects.get(
                             username=current_pr.assignees[0].login
                         )
-                    if PullRequest.objects.filter(pr_number=current_pr.number).exists():
+                    if PullRequest.objects.filter(
+                        pr_number=current_pr.number, repo=repo
+                    ).exists():
                         self.update_pr(current_pr, repo, reviewer)
                     else:
                         pr = PullRequest()
@@ -57,8 +82,55 @@ class Command(BaseCommand):
                         pr.title = current_pr.title
                         pr.pr_number = current_pr.number
                         pr.status = current_pr.state
-                        pr.created_at = current_pr.created_at
-                        pr.updated_on = current_pr.updated_at
-                        pr.closed_on = current_pr.closed_at
+                        pr.created_at = current_pr.created_at.replace(
+                            tzinfo=pytz.utc
+                        ).astimezone(timezone("Asia/Kolkata"))
+                        pr.updated_on = current_pr.updated_at.replace(
+                            tzinfo=pytz.utc
+                        ).astimezone(timezone("Asia/Kolkata"))
+                        if current_pr.closed_at == None:
+                            pr.closed_on = current_pr.closed_at
+                        else:
+                            pr.closed_on = current_pr.closed_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
                         pr.save()
-                        print(f"Created PR {pr.pr_number} for {pr.repo}")
+                        print(f"Created PR {pr.pr_number} for repo {pr.repo}")
+
+                print(f"type of number: {type(all_pr_number[0])}")
+                for current_issue in current_repo.get_issues(state="all"):
+                    reviewer = User.objects.get(username="nobody")
+                    if len(current_issue.assignees) > 0:
+                        reviewer = User.objects.get(
+                            username=current_issue.assignees[0].login
+                        )
+                    # if PullRequest.objects.filter(pr_number=current_issue.number, repo=repo).exists:
+                    if current_issue.number not in all_pr_number:
+                        print(f"issue: {current_issue.number}")
+                        if Issue.objects.filter(
+                            issue_number=current_issue.number, repo=repo
+                        ).exists():
+                            self.update_issue(current_issue, repo, reviewer)
+                        else:
+                            issue = Issue()
+                            issue.repo = repo
+                            issue.assignee = reviewer
+                            issue.title = current_issue.title
+                            issue.issue_number = current_issue.number
+                            issue.status = current_issue.state
+                            issue.created_at = current_issue.created_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
+                            issue.updated_on = current_issue.updated_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
+                            if current_issue.closed_at == None:
+                                issue.closed_on = current_issue.closed_at
+                            else:
+                                issue.closed_on = current_issue.closed_at.replace(
+                                    tzinfo=pytz.utc
+                                ).astimezone(timezone("Asia/Kolkata"))
+                            issue.save()
+                            print(
+                                f"Created Issue {issue.issue_number} for repo {issue.repo}"
+                            )

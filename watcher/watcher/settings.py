@@ -64,9 +64,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ],
+            ]
         },
-    },
+    }
 ]
 
 WSGI_APPLICATION = "watcher.wsgi.application"
@@ -92,17 +92,11 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
@@ -132,4 +126,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #     ('0 * * * *', 'django.core.management.call_command', ['ingestion']),
 # ]
 
-GITHUB_ACCESS_TOKEN = "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"
+GITHUB_ACCESS_TOKEN = "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"
