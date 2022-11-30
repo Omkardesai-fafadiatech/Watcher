@@ -132,4 +132,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #     ('0 * * * *', 'django.core.management.call_command', ['ingestion']),
 # ]
 
-GITHUB_ACCESS_TOKEN = "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"
+GITHUB_ACCESS_TOKEN = "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"
