@@ -61,120 +61,117 @@ class Command(BaseCommand):
                             all_pr_number.append(pr.number)
                         git_pr_label, get_pr_title_context = title_spliter(pr)
 
-                    #     model_dict = ""
-                    #     model_dict = get_pr_model_unique_title()
+                        model_dict = ""
+                        model_dict = get_pr_model_unique_title()
                     #     # print(len(model_dict))
                     #     # for k, v in model_dict:
                     #     #     if v>1:
                     #     #         print(f"{k}: {v}")
                     #     # print(all_pr_number)
-                    #     if len(pr.assignees) > 0:
-                    #         reviewer = User.objects.get(username=pr.assignees[0].login)
-                    #     elif len(pr.assignees) == 0:
-                    #         reviewer = User.objects.get(username="nobody")
+                        if len(pr.assignees) > 0:
+                            reviewer = User.objects.get(username=pr.assignees[0].login)
+                        elif len(pr.assignees) == 0:
+                            reviewer = User.objects.get(username="nobody")
 
-                    #     if model_dict.get(get_pr_title_context) != None:
-                    #         print(f"pr.created_at: {pr.created_at} and model_date; {model_dict[get_pr_title_context].replace(tzinfo=None)}")
-                    #         # print(model_dict.get(get_pr_title_context))
+                        if model_dict.get(get_pr_title_context) != None:
+                            print(f"pr.created_at: {pr.created_at} and model_date; {model_dict[get_pr_title_context].replace(tzinfo=None)}")
+                            # print(model_dict.get(get_pr_title_context))
 
-                    #         # if len(pr.assignees) > 0:
-                    #         #     reviewer = User.objects.get(username=pr.assignees[0].login)
+                            # if len(pr.assignees) > 0:
+                            #     reviewer = User.objects.get(username=pr.assignees[0].login)
                             
-                    #         itr1+=1
-                    #         print(f"pullrequest count: {itr1}")
+                            itr1+=1
+                            print(f"pullrequest count: {itr1}")
 
-                    #         if pr.created_at > model_dict[get_pr_title_context].replace(tzinfo=None):
-                    #             print("this pr is not merged")
-                    #             # PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                    #             # print(f"updated_at: {pr.updated_at}")
-                    #             # PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                    #             # print(f" updated_status: {pr.state}")
-                    #             # PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                    #             # print(f"updated_closed_at: {pr.closed_at}")
-                    #             # PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
-                    #             # PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
-                    #             # PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at)
-                    #             # PullRequest.objects.filter(title=pr.title).update(title=pr.title)
-                    #             # PullRequest.objects.filter(title=pr.title).update(repo=repo)
+                            if pr.created_at > model_dict[get_pr_title_context].replace(tzinfo=None):
+                                print("this pr is not merged")
+                                PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at.replace(tzinfo=pytz.utc).astimezone(timezone('Asia/Kolkata')))
+                                print(f"updated_at: {pr.updated_at}")
+                                PullRequest.objects.filter(title=pr.title).update(status=pr.state)
+                                print(f" updated_status: {pr.state}")
+                                PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at.replace(tzinfo=pytz.utc).astimezone(timezone('Asia/Kolkata')))
+                                print(f"updated_closed_at: {pr.closed_at}")
+                                PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
+                                PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
+                                PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at.replace(tzinfo=pytz.utc).astimezone(timezone('Asia/Kolkata')))
+                                PullRequest.objects.filter(title=pr.title).update(title=pr.title)
+                                PullRequest.objects.filter(title=pr.title).update(repo=repo)
 
-                    #         elif pr.created_at == model_dict[get_pr_title_context].replace(tzinfo=None):
+                            elif pr.created_at == model_dict[get_pr_title_context].replace(tzinfo=None):
                                 
-                    #             prev_updated_on1 = PullRequest.objects.filter(title=pr.title).values()[0]['updated_on'].replace(tzinfo=None)
-                    #             print(f"prev_updated_on1: {prev_updated_on1}")
-                    #             # prev_status1 = PullRequest.objects.filter(title=pr.title).values()[0]['status']
-                    #             # print(f"prev_status1: {prev_status1}")
-                    #             # prev_closed_on1 = PullRequest.objects.filter(title=pr.title).values()[0]['closed_on'].replace(tzinfo=None)
-                    #             # print(f"prev_closed_on1: {prev_closed_on1}")
-                    #             # prev_created_at1 = PullRequest.objects.filter(title=pr.title).values()[0]['created_at'].replace(tzinfo=None)
-                    #             # print(f"prev_created_at1: {prev_created_at1}")
-                    #             # prev_pr_number1 = PullRequest.objects.filter(title=pr.title).values()[0]['pr_number']
-                    #             # print(f"prev_pr_number1: {prev_pr_number1}")
-                    #             # prev_updated_on = [i.updated_on for i in PullRequest.objects.filter(title=pr.title)]
-                    #             # print(f"prev_updated_on: {prev_updated_on}")
-                    #             # prev_status = [i.status for i in PullRequest.objects.filter(title=pr.title)]
-                    #             # print(f"prev_status: {prev_status}")
-                    #             # prev_closed_on = [i.closed_on for i in PullRequest.objects.filter(title=pr.title)]
-                    #             # print(f"prev_closed_on: {prev_closed_on}")
-                    #             # prev_created_at_0 = PullRequest.objects.filter(title=pr.title).values()
-                    #             # prev_created_at = prev_created_at_0[0]['created_at'].replace(tzinfo=None)
-                    #             # print(f"prev_created_at: {prev_created_at}")
-                    #             # prev_pr_number = [i.pr_number for i in PullRequest.objects.filter(title=pr.title)]
-                    #             # print(f"prev_pr_number: {prev_pr_number}")
-                    #             # if len(prev_updated_on) != 0:
-                    #             #     if pr.updated_at != prev_updated_on[0].replace(tzinfo=None):
-                    #             #         try:
-                    #             #             print(f"prev_updated_on: {prev_updated_on[0].replace(tzinfo=None)}, updated_at: {pr.updated_at}")
-                    #             #             PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                    #             #         except:
-                    #             #             continue
-                    #             # elif len(prev_updated_on) == 0:
-                    #             #     if pr.updated_at != "":
-                    #             #         PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                    #             # if len(prev_closed_on) != 0:
-                    #             #     if pr.closed_at != prev_closed_on[0].replace(tzinfo=None):
-                    #             #         print(f"prev_closed_on: {prev_closed_on[0].replace(tzinfo=None)}, updated_closed_at: {pr.closed_at}")
-                    #             #         PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                    #             # elif len(prev_closed_on) == 0:
-                    #             #     if pr.closed_at != "":
-                    #             #         PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                    #             # if len(prev_status) != 0:
-                    #             #     if prev_status[0] != pr.state:
-                    #             #         print(f"prev_status: {prev_status[0]}, updated_status: {pr.state}")
-                    #             #         PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                    #             # elif len(prev_status) == 0:
-                    #             #     if pr.state != "":
-                    #             #         print(f"prev_status: {prev_status}, updated_status: {pr.state}")
-                    #             #         PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                    #             # PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
-                    #             # PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
-                    #             # PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at)
-                    #             # PullRequest.objects.filter(title=pr.title).update(title=pr.title)
-                    #             # PullRequest.objects.filter(title=pr.title).update(repo=repo)
-                    #         else:
-                    #             continue
+                                prev_updated_on1 = PullRequest.objects.filter(title=pr.title).values()[0]['updated_on'].replace(tzinfo=None)
+                                print(f"prev_updated_on1: {prev_updated_on1}")
+                                # prev_status1 = PullRequest.objects.filter(title=pr.title).values()[0]['status']
+                                # print(f"prev_status1: {prev_status1}")
+                                # prev_closed_on1 = PullRequest.objects.filter(title=pr.title).values()[0]['closed_on'].replace(tzinfo=None)
+                                # print(f"prev_closed_on1: {prev_closed_on1}")
+                                # prev_created_at1 = PullRequest.objects.filter(title=pr.title).values()[0]['created_at'].replace(tzinfo=None)
+                                # print(f"prev_created_at1: {prev_created_at1}")
+                                # prev_pr_number1 = PullRequest.objects.filter(title=pr.title).values()[0]['pr_number']
+                                # print(f"prev_pr_number1: {prev_pr_number1}")
+                                prev_updated_on = [i.updated_on for i in PullRequest.objects.filter(title=pr.title)]
+                                print(f"prev_updated_on: {prev_updated_on}")
+                                prev_status = [i.status for i in PullRequest.objects.filter(title=pr.title)]
+                                print(f"prev_status: {prev_status}")
+                                prev_closed_on = [i.closed_on for i in PullRequest.objects.filter(title=pr.title)]
+                                print(f"prev_closed_on: {prev_closed_on}")
+                                prev_created_at_0 = PullRequest.objects.filter(title=pr.title).values()
+                                prev_created_at = prev_created_at_0[0]['created_at'].replace(tzinfo=None)
+                                print(f"prev_created_at: {prev_created_at}")
+                                prev_pr_number = [i.pr_number for i in PullRequest.objects.filter(title=pr.title)]
+                                print(f"prev_pr_number: {prev_pr_number}")
+                                if len(prev_updated_on) != 0:
+                                    if pr.updated_at != prev_updated_on[0].replace(tzinfo=None):
+                                        print(f"prev_updated_on: {prev_updated_on[0].replace(tzinfo=None)}, updated_at: {pr.updated_at}")
+                                        PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                elif len(prev_updated_on) == 0:
+                                    if pr.updated_at != "":
+                                        PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
+                                if len(prev_closed_on) != 0:
+                                    if pr.closed_at != prev_closed_on[0].replace(tzinfo=None):
+                                        print(f"prev_closed_on: {prev_closed_on[0].replace(tzinfo=None)}, updated_closed_at: {pr.closed_at}")
+                                        PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
+                                elif len(prev_closed_on) == 0:
+                                    if pr.closed_at != "":
+                                        PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
+                                if len(prev_status) != 0:
+                                    if prev_status[0] != pr.state:
+                                        print(f"prev_status: {prev_status[0]}, updated_status: {pr.state}")
+                                        PullRequest.objects.filter(title=pr.title).update(status=pr.state)
+                                elif len(prev_status) == 0:
+                                    if pr.state != "":
+                                        print(f"prev_status: {prev_status}, updated_status: {pr.state}")
+                                        PullRequest.objects.filter(title=pr.title).update(status=pr.state)
+                                PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
+                                PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
+                                PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at)
+                                PullRequest.objects.filter(title=pr.title).update(title=pr.title)
+                                PullRequest.objects.filter(title=pr.title).update(repo=repo)
+                            else:
+                                continue
 
-                    #     # elif model_dict.get(get_pr_title_context) == None:
-                    #     #     print(f"new pr: {pr.title}")
-                    #     #     itr1+=1
-                    #     #     print(f"pullrequest count: {itr1}")
-                    #     #     pullrequest = PullRequest(
-                    #     #         reviewer = reviewer,
-                    #     #         title = pr.title,
-                    #     #         pr_number = pr.number,
-                    #     #         status = pr.state,
-                    #     #         repo = repo,
-                    #     #         created_at = pr.created_at,
-                    #     #         updated_on = pr.updated_at,
-                    #     #         closed_on = pr.closed_at
-                    #     #     )
-                    #     #     pullrequest.save()
-                    #     # else:
-                    #     #     continue
-                    #     # print(f"itr1 number outside loop: {itr1}")
-                    #     # break
-                    # print(f"Ingested pull request")
-                    # # print(all_pr_number)
-                    # print(len(all_pr_number))
+                        # elif model_dict.get(get_pr_title_context) == None:
+                        #     print(f"new pr: {pr.title}")
+                        #     itr1+=1
+                        #     print(f"pullrequest count: {itr1}")
+                        #     pullrequest = PullRequest(
+                        #         reviewer = reviewer,
+                        #         title = pr.title,
+                        #         pr_number = pr.number,
+                        #         status = pr.state,
+                        #         repo = repo,
+                        #         created_at = pr.created_at,
+                        #         updated_on = pr.updated_at,
+                        #         closed_on = pr.closed_at
+                        #     )
+                        #     pullrequest.save()
+                        # else:
+                        #     continue
+                        # print(f"itr1 number outside loop: {itr1}")
+                        # break
+                    print(f"Ingested pull request")
+                    # print(all_pr_number)
+                    print(len(all_pr_number))
 
                     
                     # for issue in repository.get_issues(state="all"):
