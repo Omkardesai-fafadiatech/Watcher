@@ -1,227 +1,155 @@
 from github import Github
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from core.models import Project, Repository, Issue, PullRequest
-from core.serializers import ProjectSerializer, RepositorySerializer, IssueSerializer, PullRequestSerializer
-from pathlib import Path
+from core.models import Repository, Issue, PullRequest
 from django.contrib.auth.models import User
-from collections import defaultdict
 import pytz
 from pytz import timezone
 
-from core.utils import title_context_cleaner, title_label_cleaner, title_spliter, get_pr_model_unique_title, get_issue_model_unique_title
-
-
+"""
+This ingestion code will run and ingest github data into postgres database every hour when the computer system is switched ON using crontab 
+in settings.py
+"""
 class Command(BaseCommand):
-    help = "Ingest git_data into Postgres database"
+    help = "Ingest git data into database"
+    WHITE_LISTED_REPO = ["xpertconnect", "xc_analytics", "rsa_crawling", "rsa_graphdb"]
+
+    def update_pr(self, pr_info, repo, reviewer):
+        """
+        This function updates the pullRequest if it exists and if update date has changed.
+        """
+
+        pr = PullRequest.objects.filter(pr_number=pr_info.number, repo=repo)
+        if PullRequest.objects.filter(pr_number=pr_info.number, repo=repo).exists():
+            pr = PullRequest.objects.get(pr_number=pr_info.number, repo=repo)
+        if pr.updated_on != pr_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+            timezone("Asia/Kolkata")
+        ):
+            pr.reviewer = reviewer
+            pr.title = pr_info.title
+            pr.status = pr_info.state
+            pr.updated_on = pr_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+                timezone("Asia/Kolkata")
+            )
+            if pr_info.closed_at == None:
+                pr.closed_on = pr_info.closed_at
+            else:
+                pr.closed_on = pr_info.closed_at.replace(tzinfo=pytz.utc).astimezone(
+                    timezone("Asia/Kolkata")
+                )
+            pr.save()
+            print(f"Updated pr_number: {pr_info.number} for repo: {repo}")
+
+    def update_issue(self, issue_info, repo, reviewer):
+        """
+        This function updates the Issue if: 1. It exists and 2. If update date has changed.
+        """
+
+        issue = Issue.objects.filter(issue_number=issue_info.number, repo=repo)
+        if Issue.objects.filter(issue_number=issue_info.number, repo=repo).exists():
+            issue = Issue.objects.get(issue_number=issue_info.number, repo=repo)
+        update_date = issue_info.updated_at
+        if issue_info.updated_at != None:
+            update_date = issue_info.updated_at.replace(tzinfo=pytz.utc).astimezone(
+                timezone("Asia/Kolkata")
+            )
+        if issue.updated_on != update_date:
+            issue.assignee = reviewer
+            issue.title = issue_info.title
+            issue.status = issue_info.state
+            issue.updated_on = issue_info.updated_at.replace(
+                tzinfo=pytz.utc
+            ).astimezone(timezone("Asia/Kolkata"))
+            if issue.closed_on == None:
+                issue.closed_on = issue_info.closed_at
+            else:
+                issue.closed_on = issue_info.closed_at.replace(
+                    tzinfo=pytz.utc
+                ).astimezone(timezone("Asia/Kolkata"))
+            issue.save()
+            print(f"Updated issue_number: {issue_info.number} for repo: {repo}")
 
     def handle(self, *args, **options):
-        BASE_DIR = Path(__file__).parent.resolve()
-        """
-        This Github token is from omkar Github account.
-        """
-
-        
-        access_token = "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"
-
-        login = Github(access_token)
-        itr1 =  0
-        itr = 0
-        for repository in login.get_user().get_repos():
-            private = repository.private
-
-            if private:
-                if repository.name in ["xpertconnect", "xc_analytics", "rsa_crawling", "rsa_graphdb"]:
-                    repository_name = repository.name
-                    all_pr_number = []
-                    repo = Repository.objects.get(name=repository_name)
-                    for pr in repository.get_pulls(state="all"):
-                        print(pr.title)
-                        if pr.number not in all_pr_number:
-                            all_pr_number.append(pr.number)
-                        git_pr_label, get_pr_title_context = title_spliter(pr)
-
-                        model_dict = ""
-                        model_dict = get_pr_model_unique_title()
-                        if len(pr.assignees) > 0:
-                            reviewer = User.objects.get(username=pr.assignees[0].login)
-                        elif len(pr.assignees) == 0:
-                            reviewer = User.objects.get(username="nobody")
-
-                        if model_dict.get(get_pr_title_context) != None:
-                            print(model_dict.get(get_pr_title_context))
-                            
-                            itr1+=1
-                            print(f"pullrequest count: {itr1}")
-
-                            if pr.created_at > model_dict[get_pr_title_context].replace(tzinfo=None):
-                                print("this pr is not merged")
-                                PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                                PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                                PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                                PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
-                                PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
-                                PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at)
-                                PullRequest.objects.filter(title=pr.title).update(title=pr.title)
-                                PullRequest.objects.filter(title=pr.title).update(repo=repo)
-
-                            elif pr.created_at == model_dict[get_pr_title_context].replace(tzinfo=None):
-                                print("this pr is not merged")
-                                prev_updated_on = [i.updated_on for i in PullRequest.objects.filter(title=pr.title)]
-                                prev_status = [i.status for i in PullRequest.objects.filter(title=pr.title)]
-                                prev_closed_on = [i.closed_on for i in PullRequest.objects.filter(title=pr.title)]
-                                prev_created_at_0 = PullRequest.objects.filter(title=pr.title).values()
-                                prev_created_at = prev_created_at_0[0]['created_at'].replace(tzinfo=None)
-                                prev_pr_number = [i.pr_number for i in PullRequest.objects.filter(title=pr.title)]
-                                if len(prev_updated_on) != 0:
-                                    if pr.updated_at != prev_updated_on[0].replace(tzinfo=None):
-                                        try:
-                                            print(f"prev_updated_on: {prev_updated_on[0].replace(tzinfo=None)}, updated_at: {pr.updated_at}")
-                                            PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                                        except:
-                                            continue
-                                elif len(prev_updated_on) == 0:
-                                    if pr.updated_at != "":
-                                        PullRequest.objects.filter(title=pr.title).update(updated_on=pr.updated_at)
-                                if len(prev_closed_on) != 0:
-                                    if pr.closed_at != prev_closed_on[0].replace(tzinfo=None):
-                                        print(f"prev_closed_on: {prev_closed_on[0].replace(tzinfo=None)}, updated_closed_at: {pr.closed_at}")
-                                        PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                                elif len(prev_closed_on) == 0:
-                                    if pr.closed_at != "":
-                                        PullRequest.objects.filter(title=pr.title).update(closed_on=pr.closed_at)
-                                if len(prev_status) != 0:
-                                    if prev_status[0] != pr.state:
-                                        print(f"prev_status: {prev_status[0]}, updated_status: {pr.state}")
-                                        PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                                elif len(prev_status) == 0:
-                                    if pr.state != "":
-                                        print(f"prev_status: {prev_status}, updated_status: {pr.state}")
-                                        PullRequest.objects.filter(title=pr.title).update(status=pr.state)
-                                PullRequest.objects.filter(title=pr.title).update(reviewer=reviewer)
-                                PullRequest.objects.filter(title=pr.title).update(pr_number=pr.number)
-                                PullRequest.objects.filter(title=pr.title).update(created_at=pr.created_at)
-                                PullRequest.objects.filter(title=pr.title).update(title=pr.title)
-                                PullRequest.objects.filter(title=pr.title).update(repo=repo)
-                            else:
-                                continue
-
-                        elif model_dict.get(get_pr_title_context) == None:
-                            print(f"new pr: {pr.title}")
-                            itr1+=1
-                            print(f"pullrequest count: {itr1}")
-                            pullrequest = PullRequest(
-                                reviewer = reviewer,
-                                title = pr.title,
-                                pr_number = pr.number,
-                                status = pr.state,
-                                repo = repo,
-                                created_at = pr.created_at,
-                                updated_on = pr.updated_at,
-                                closed_on = pr.closed_at
-                            )
-                            pullrequest.save()
+        client = Github(settings.GITHUB_ACCESS_TOKEN)
+        for current_repo in client.get_user().get_repos():
+            if current_repo.name in self.WHITE_LISTED_REPO:
+                print(current_repo)
+                all_pr_number = []
+                repo = Repository.objects.get(name=current_repo.name)
+                """
+                For loop for PullRequest
+                """
+                for current_pr in current_repo.get_pulls(state="all"):
+                    print(f"pr number: {current_pr.number}")
+                    if current_pr.number not in all_pr_number:
+                        all_pr_number.append(current_pr.number)
+                    reviewer = User.objects.get(username="nobody")
+                    if len(current_pr.assignees) > 0:
+                        reviewer = User.objects.get(
+                            username=current_pr.assignees[0].login
+                        )
+                    if PullRequest.objects.filter(
+                        pr_number=current_pr.number, repo=repo
+                    ).exists():
+                        self.update_pr(current_pr, repo, reviewer)
+                    else:
+                        pr = PullRequest()
+                        pr.repo = repo
+                        pr.reviewer = reviewer
+                        pr.title = current_pr.title
+                        pr.pr_number = current_pr.number
+                        pr.status = current_pr.state
+                        pr.created_at = current_pr.created_at.replace(
+                            tzinfo=pytz.utc
+                        ).astimezone(timezone("Asia/Kolkata"))
+                        pr.updated_on = current_pr.updated_at.replace(
+                            tzinfo=pytz.utc
+                        ).astimezone(timezone("Asia/Kolkata"))
+                        if current_pr.closed_at == None:
+                            pr.closed_on = current_pr.closed_at
                         else:
-                            continue
-                        print(f"itr1 number outside loop: {itr1}")
-                    print(f"Ingested pull request")
-                    print(len(all_pr_number))
+                            pr.closed_on = current_pr.closed_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
+                        pr.save()
+                        print(f"Created PR {pr.pr_number} for repo {pr.repo}")
 
-                    
-                    for issue in repository.get_issues(state="all"):
-                        if issue.number not in all_pr_number:
-                            print(issue.title)
-                            git_issue_label, git_issue_title_context = title_spliter(issue)
-
-                            issue_model_dict = ""
-                            issue_model_dict = get_issue_model_unique_title()
-
-                            if len(issue.assignees) > 0:
-                                assignee = User.objects.get(username=issue.assignees[0].login)
-                            elif len(issue.assignees) == 0:
-                                assignee = User.objects.get(username="nobody")
-
-                            if issue_model_dict.get(git_issue_title_context) != None:
-                                print(issue_model_dict.get(git_issue_title_context))
-                                
-                                itr+=1
-                                print(f"issue count: {itr}")
-                                if issue.created_at > issue_model_dict[git_issue_title_context].replace(tzinfo=None):
-                                    prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
-                                    prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
-                                    prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
-                                    prev_created_at = [i.created_at for i in Issue.objects.filter(title=issue.title)]
-                                    prev_issue_number = [i.issue_number for i in Issue.objects.filter(title=issue.title)]
-                                    print("this issue is not latest")
-                                    Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
-                                    print(f"prev_updated_on: {prev_updated_on}, updated_at: {issue.updated_at}")
-                                    Issue.objects.filter(title=issue.title).update(status=issue.state)
-                                    print(f"prev_status: {prev_status}, updated_status: {issue.state}")
-                                    Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
-                                    print(f"prev_closed_on: {prev_closed_on}, updated_closed_at: {issue.closed_at}")
-                                    Issue.objects.filter(title=issue.title).update(assignee=assignee)
-                                    Issue.objects.filter(title=issue.title).update(issue_number=issue.number)
-                                    Issue.objects.filter(title=issue.title).update(created_at=issue.created_at)
-                                    Issue.objects.filter(title=issue.title).update(title=issue.title)
-                                    Issue.objects.filter(title=issue.title).update(repo=repo)
-
-                                elif issue.created_at == issue_model_dict[git_issue_title_context].replace(tzinfo=None):
-                                    print("this issue is not updated")
-                                    prev_updated_on = [i.updated_on for i in Issue.objects.filter(title=issue.title)]
-                                    prev_status = [i.status for i in Issue.objects.filter(title=issue.title)]
-                                    prev_closed_on = [i.closed_on for i in Issue.objects.filter(title=issue.title)]
-                                    prev_created_at_0 = Issue.objects.filter(title=issue.title).values()
-                                    prev_created_at = prev_created_at_0[0]['created_at'].replace(tzinfo=None)
-                                    prev_issue_number = [i.issue_number for i in Issue.objects.filter(title=issue.title)]
-                                    if len(prev_updated_on) != 0:
-                                        if issue.updated_at != prev_updated_on[0].replace(tzinfo=None):
-                                            try:
-                                                print(f"prev_updated_on: {prev_updated_on[0].replace(tzinfo=None)}, updated_at: {issue.updated_at}")
-                                                Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
-                                            except:
-                                                continue
-                                    elif len(prev_updated_on) == 0:
-                                        if issue.updated_at != "":
-                                            Issue.objects.filter(title=issue.title).update(updated_on=issue.updated_at)
-                                    if len(prev_closed_on) != 0:
-                                        if issue.closed_at != prev_closed_on[0].replace(tzinfo=None):
-                                            print(f"prev_closed_on: {prev_closed_on[0].replace(tzinfo=None)}, updated_closed_at: {issue.closed_at}")
-                                            Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
-                                    elif len(prev_closed_on) == 0:
-                                        if issue.closed_at != "":
-                                            Issue.objects.filter(title=issue.title).update(closed_on=issue.closed_at)
-                                    if len(prev_status) != 0:
-                                        if prev_status[0] != issue.state:
-                                            print(f"prev_status: {prev_status[0]}, updated_status: {issue.state}")
-                                            Issue.objects.filter(title=issue.title).update(status=issue.state)
-                                    elif len(prev_status) == 0:
-                                        if issue.state != "":
-                                            print(f"prev_status: {prev_status}, updated_status: {issue.state}")
-                                            Issue.objects.filter(title=issue.title).update(status=issue.state)
-                                    if len(prev_issue_number) != 0:
-                                        if prev_issue_number[0] != issue.number:
-                                            Issue.objects.filter(title=issue.title).update(assignee=assignee)
-                                            Issue.objects.filter(title=issue.title).update(issue_number=issue.number)
-                                            Issue.objects.filter(title=issue.title).update(created_at=issue.created_at)
-                                            Issue.objects.filter(title=issue.title).update(title=issue.title)
-                                            Issue.objects.filter(title=issue.title).update(repo=repo)
-                                else:
-                                    continue
-                                
-                            elif issue_model_dict.get(git_issue_title_context) == None:
-                                print(f"new issue: {issue.title}")
-                                itr+=1
-                                print(f"issue count: {itr}")
-                                issue = Issue(
-                                        assignee = assignee,
-                                        title = issue.title,
-                                        issue_number = issue.number,
-                                        status = issue.state,
-                                        repo = repo,
-                                        created_at = issue.created_at,
-                                        updated_on = issue.updated_at,
-                                        closed_on = issue.closed_at
-                                    )
-                                issue.save()
+                """
+                For loop for Issue
+                """
+                for current_issue in current_repo.get_issues(state="all"):
+                    print(current_issue.number, current_issue.assignees)
+                    reviewer = User.objects.get(username="nobody")
+                    if len(current_issue.assignees) > 0:
+                        reviewer = User.objects.get(
+                            username=current_issue.assignees[0].login
+                        )
+                    if current_issue.number not in all_pr_number:
+                        print(f"issue number: {current_issue.number}")
+                        if Issue.objects.filter(
+                            issue_number=current_issue.number, repo=repo
+                        ).exists():
+                            self.update_issue(current_issue, repo, reviewer)
+                        else:
+                            issue = Issue()
+                            issue.repo = repo
+                            issue.assignee = reviewer
+                            issue.title = current_issue.title
+                            issue.issue_number = current_issue.number
+                            issue.status = current_issue.state
+                            issue.created_at = current_issue.created_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
+                            issue.updated_on = current_issue.updated_at.replace(
+                                tzinfo=pytz.utc
+                            ).astimezone(timezone("Asia/Kolkata"))
+                            if current_issue.closed_at == None:
+                                issue.closed_on = current_issue.closed_at
                             else:
-                                continue
-                    print(f"Ingested issue")
+                                issue.closed_on = current_issue.closed_at.replace(
+                                    tzinfo=pytz.utc
+                                ).astimezone(timezone("Asia/Kolkata"))
+                            issue.save()
+                            print(
+                                f"Created Issue {issue.issue_number} for repo {issue.repo}"
+                            )

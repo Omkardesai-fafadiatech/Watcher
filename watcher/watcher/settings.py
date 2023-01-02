@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -128,6 +127,13 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CRONJOBS = [
-#     ('0 * * * *', 'django.core.management.call_command', ['ingestion']),
-# ]
+CRONJOBS = [
+    ('0 * * * *', 'django.core.management.call_command', ['ingestion']),
+    ('0 12 * * *', 'django.core.management.call_command', ['token_generator']),
+]
+
+# GITHUB_ACCESS_TOKEN = "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"
+new_token = ""
+token = open(f"{BASE_DIR}/new_token.txt", "r")
+new_token = token.readline()
+GITHUB_ACCESS_TOKEN = new_token
